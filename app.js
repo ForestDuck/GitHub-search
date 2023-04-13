@@ -29,7 +29,6 @@ class Github {
 class UI {
     constructor() {
         this.profile = document.querySelector('.profile');
-        this.recentSearches = [];
     }
 
     showProfile(user) {
@@ -58,7 +57,23 @@ class UI {
       <h3 class="page-heading mb-3">Latest Repos</h3>
       <div class="repos"></div>
         `;
-    }
+     this.showLastRepos(user.login);
+  }
+
+  async showLastRepos(userName) {
+    const response = await fetch(`${GITHUB_API}users/${userName}/repos?per_page=5&sort=updated`);
+    const repos = await response.json();
+    const reposDiv = this.profile.querySelector('.repos');
+  
+    reposDiv.innerHTML = `
+      <div class="list-group">
+        ${repos.map(repo => `
+          <a href="${repo.html_url}" target="_blank" class="list-group-item list-group-item-action">${repo.full_name}</a>
+        `).join('')}
+      </div>
+      <div class="mt-3"></div>
+    `;
+  }
 
     showAlert(message, className) {
         this.clearAlert();
@@ -95,45 +110,9 @@ class UI {
           }, delay);
         };
       }
-       addRecentSearch(user) {
-    if (this.recentSearches.length === 5) {
-      this.recentSearches.pop();
-    }
-    this.recentSearches.unshift(user);
-  }
+     
 
-  showRecentSearches() {
-    const recentSearchesList = document.querySelector('.repos');
-    recentSearchesList.innerHTML = '';
-
-    this.recentSearches.forEach((user) => {
-      const div = document.createElement('div');
-      div.innerHTML = `
-      <div class="card card-body mb-3">
-      <div class="row">
-        <div class="col-md-3">
-          <img class="img-fluid mb-2" src="${user.avatar_url}">
-          <a href="${user.html_url}" target="_blank" class="btn btn-primary btn-block mb-4">View Profile</a>
-        </div>
-        <div class="col-md-9">
-          <span class="badge badge-primary">Public Repos: ${user.public_repos}</span>
-          <span class="badge badge-secondary">Public Gists: ${user.public_gists}</span>
-          <span class="badge badge-success">Followers: ${user.followers}</span>
-          <span class="badge badge-info">Following: ${user.following}</span>
-          <br><br>
-          <ul class="list-group">
-            <li class="list-group-item">Company: ${user.company}</li>
-            <li class="list-group-item">Website/Blog: ${user.blog}</li>
-            <li class="list-group-item">Location: ${user.location}</li>
-            <li class="list-group-item">Member Since: ${user.created_at}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-      `;
-      recentSearchesList.appendChild(div);
-    });
-  }
+ 
     
   async handleSearch(event) {
     const userText = event.target.value;
@@ -144,8 +123,6 @@ class UI {
         this.showAlert('User not found', 'alert alert-danger');
       } else {
         this.showProfile(response);
-        this.addRecentSearch(response);
-        this.showRecentSearches();
       }
     } else {
       this.clearProfile();
